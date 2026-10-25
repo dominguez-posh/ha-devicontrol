@@ -51,6 +51,7 @@ MODE_BY_NAME = {name: mode for mode, name in MODES.items()}
 # byte 8 bit0..2 as observed on the device
 ACTIVE_PHASES = {0: "comfort", 3: "eco", 4: "antifreeze"}
 
+DEVICE_NAME_MAX_BYTES = 15  # longer names are rejected with "invalid attribute length"
 ANTIFREEZE_TEMPERATURE = 7.0
 ECO_OFFSET_MIN = 2.0
 ECO_OFFSET_MAX = 20.0
@@ -171,6 +172,11 @@ def encode_time(dt: datetime) -> bytes:
 def decode_time(data: bytes | bytearray) -> datetime:
     year, month, day, hour, minute, second = struct.unpack_from("<HBBBBB", data)
     return datetime(year, month, day, hour, minute, second)
+
+
+def device_name_bytes(name: str) -> bytes:
+    """UTF-8 name cut to what the device accepts, without splitting a character."""
+    return name.strip().encode()[:DEVICE_NAME_MAX_BYTES].decode(errors="ignore").rstrip().encode()
 
 
 def slot_label(slot: int) -> str:

@@ -1,0 +1,87 @@
+blueprint:
+  name: Heizung läuft zu lange (Kermi EcoTimer)
+  description: >-
+    Benachrichtigt die gewählten Smartphones, wenn ein Heizkörper länger als die
+    eingestellte Zeit ununterbrochen heizt (z. B. weil die Komforttemperatur am
+    Drehrad zu hoch steht). Optional wird zusätzlich eine eigene Aktion ausgeführt.
+  domain: automation
+  source_url: https://github.com/dominguez-posh/ha-devicontrol/blob/main/blueprints/automation/kermi_ecotimer/heating_too_long.yaml
+  input:
+    heating_sensor:
+      name: Heizt-Sensor
+      description: Binärsensor „Heizt“ des Thermostats (Relais an = Heizstab hat Strom).
+      selector:
+        entity:
+          filter:
+            - integration: kermi_ecotimer
+              domain: binary_sensor
+    duration:
+      name: Dauer bis zur Benachrichtigung
+      default:
+        hours: 1
+        minutes: 30
+        seconds: 0
+      selector:
+        duration:
+    notify_devices:
+      name: Smartphones
+      description: Geräte mit der Home-Assistant-App, die benachrichtigt werden.
+      default: []
+      selector:
+        device:
+          multiple: true
+          filter:
+            - integration: mobile_app
+    title:
+      name: Titel
+      default: Heizung läuft lange
+      selector:
+        text:
+    message:
+      name: Nachricht
+      description: "Platzhalter: {{ name }} (Gerät), {{ duration }} (Dauer)"
+      default: "{{ name }} heizt seit {{ duration }} ununterbrochen. Komforttemperatur am Drehrad prüfen."
+      selector:
+        text:
+          multiline: true
+    extra_action:
+      name: Zusätzliche Aktion (optional)
+      description: Wird nach der Benachrichtigung ausgeführt, z. B. Heizung ausschalten.
+      default: []
+      selector:
+        action:
+
+mode: single
+
+triggers:
+  - trigger: state
+    entity_id: !input heating_sensor
+    to: "on"
+    for: !input duration
+
+# name and duration first: title and message may use them as placeholders
+variables:
+  notify_devices: !input notify_devices
+  duration_input: !input duration
+  name: "{{ device_attr(device_id(trigger.entity_id), 'name_by_user') or device_attr(device_id(trigger.entity_id), 'name') or state_attr(trigger.entity_id, 'friendly_name') }}"
+  duration: >-
+    {% set d = duration_input %}
+    {% set h = d.hours | default(0) | int %}{% set m = d.minutes | default(0) | int %}
+    {{ ((h ~ ' h ' if h else '') ~ (m ~ ' min' if m else '')) | trim }}
+  title_template: !input title
+  message_template: !input message
+
+actions:
+  - repeat:
+      for_each: "{{ notify_devices }}"
+      sequence:
+        - action: "notify.mobile_app_{{ device_attr(repeat.item, 'name') | slugify }}"
+          continue_on_error: true
+          data:
+            title: "{{ title_template }}"
+            message: "{{ message_template }}"
+            data:
+              tag: "heating_too_long_{{ trigger.entity_id }}"
+  - choose:
+      - conditions: "{{ true }}"
+        sequence: !input extra_action

@@ -33,3 +33,18 @@ set_program:
       default: true
       selector:
         boolean:
+rename:
+  target:
+    entity:
+      integration: kermi_ecotimer
+      domain: climate
+  fields:
+    name:
+      required: true
+      example: Bad Klein Handtuch Trockner
+      selector:
+        text:
+    device_name:
+      example: Bad Klein
+      selector:
+        text:

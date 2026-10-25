@@ -22,10 +22,10 @@
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Abfrageintervall (Minuten)"
+          "poll_seconds": "Abfrageintervall (Sekunden)"
         },
         "data_description": {
-          "scan_interval": "Jede Abfrage verbindet sich kurz. Währenddessen kann sich die EcoTimer-App nicht verbinden."
+          "poll_seconds": "Die Verbindung bleibt bestehen, eine Abfrage ist nur ein Lesezugriff. Solange Home Assistant verbunden ist, kann sich die EcoTimer-App nicht verbinden."
         }
       }
     }
@@ -118,6 +118,20 @@
         "activate": {
           "name": "Aktivieren",
           "description": "Programm aufs Gerät schreiben und auf Preset Wochenprogramm wechseln."
+        }
+      }
+    },
+    "rename": {
+      "name": "Umbenennen",
+      "description": "Schreibt einen neuen Bluetooth-Namen auf das Thermostat und benennt das Gerät in Home Assistant um.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Name in Home Assistant."
+        },
+        "device_name": {
+          "name": "Name am Gerät",
+          "description": "Bluetooth-Name auf dem Thermostat (max. 15 Bytes). Standard: der Name oben, gekürzt."
         }
       }
     }

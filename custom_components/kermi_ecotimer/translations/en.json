@@ -22,10 +22,10 @@
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Polling interval (minutes)"
+          "poll_seconds": "Polling interval (seconds)"
         },
         "data_description": {
-          "scan_interval": "Each poll connects briefly. While connected, the EcoTimer app cannot connect."
+          "poll_seconds": "The connection stays open, so a poll is a single read. While Home Assistant is connected, the EcoTimer app cannot connect."
         }
       }
     }
@@ -118,6 +118,20 @@
         "activate": {
           "name": "Activate",
           "description": "Write the program to the device and switch to the week program preset."
+        }
+      }
+    },
+    "rename": {
+      "name": "Rename",
+      "description": "Writes a new Bluetooth name to the thermostat and renames the device in Home Assistant.",
+      "fields": {
+        "name": {
+          "name": "Name",
+          "description": "Name in Home Assistant."
+        },
+        "device_name": {
+          "name": "Name on the device",
+          "description": "Bluetooth name stored on the thermostat (max. 15 bytes). Default: the name above, shortened."
         }
       }
     }

@@ -3,11 +3,11 @@
 substitutions:
   name: bt-proxy-bad
   friendly_name: BT-Proxy Bad
-  # entity ids of the two thermostats (set after they are added in Home Assistant)
-  bath1_name: Bad 1
-  bath1_climate: climate.thermostat_wks
-  bath2_name: Bad 2
-  bath2_climate: climate.thermostat_wks_2
+  # entity ids of the two thermostats in Home Assistant
+  bath1_name: Bad Groß
+  bath1_climate: climate.bad_gross_handtuch_trockner
+  bath2_name: Bad Klein
+  bath2_climate: climate.bad_klein_handtuch_trockner
 
 esphome:
   name: ${name}
@@ -54,9 +54,11 @@ font:
   - file: "gfonts://Roboto"
     id: font_small
     size: 11
+    glyphsets: [GF_Latin_Core]
   - file: "gfonts://Roboto@500"
     id: font_big
     size: 18
+    glyphsets: [GF_Latin_Core]
 
 sensor:
   - platform: homeassistant
@@ -93,6 +95,7 @@ display:
   - platform: ssd1306_i2c
     model: "SH1106 128x64"
     address: 0x3C
+    rotation: 180
     update_interval: 5s
     lambda: |-
       auto line = [&](int y, const char *name, esphome::homeassistant::HomeassistantSensor *t,

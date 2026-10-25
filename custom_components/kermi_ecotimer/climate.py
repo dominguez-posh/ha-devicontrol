@@ -54,6 +54,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: EcoTimerConfigEntry,
     async_add_entities([EcoTimerClimate(entry.runtime_data)])
     platform = entity_platform.async_get_current_platform()
     platform.async_register_entity_service("set_program", SET_PROGRAM_SCHEMA, "async_set_program")
+    platform.async_register_entity_service(
+        "rename",
+        {
+            vol.Required("name"): vol.All(cv.string, vol.Length(min=1, max=64)),
+            vol.Optional("device_name"): vol.All(cv.string, vol.Length(min=1, max=proto.DEVICE_NAME_MAX_BYTES)),
+        },
+        "async_rename",
+    )
 
 
 class EcoTimerClimate(EcoTimerEntity, ClimateEntity):
@@ -152,6 +160,10 @@ class EcoTimerClimate(EcoTimerEntity, ClimateEntity):
             program = proto.uniform_program(mode)
         self._last_preset = preset_mode
         await self.coordinator.async_write(boost=False, program=program)
+
+    async def async_rename(self, name: str, device_name: str | None = None) -> None:
+        """Rename the thermostat (Bluetooth name, Home Assistant device and entry)."""
+        await self.coordinator.async_rename(name, device_name)
 
     async def async_set_program(self, days: list[str], base_mode: str, periods: list[dict[str, str]],
                                 activate: bool) -> None:

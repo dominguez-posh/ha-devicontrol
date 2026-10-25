@@ -108,6 +108,14 @@ def test_time_roundtrip():
     assert proto.decode_time(bytes.fromhex("e5 07 05 06 05 1f 11 04 00 00")) == datetime(2021, 5, 6, 5, 31, 17)
 
 
+def test_device_name_is_cut_to_15_bytes():
+    assert proto.device_name_bytes("Bad Klein") == b"Bad Klein"
+    assert proto.device_name_bytes("Bad Klein Handtuch Trockner") == b"Bad Klein Handt"
+    # never split the two-byte 'ß'
+    assert proto.device_name_bytes("Bad Großßßßßßßß") == "Bad Großßßß".encode()
+    assert len(proto.device_name_bytes("Bad Großßßßßßßß")) <= 15
+
+
 @pytest.mark.parametrize(("text", "slot"), [("00:00", 0), ("06:30", 26), ("06:44", 26), ("24:00", 96)])
 def test_parse_slot(text, slot):
     assert proto.parse_slot(text) == slot

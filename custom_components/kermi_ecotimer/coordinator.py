@@ -1,4 +1,4 @@
-"""Polling coordinator for one EcoTimer."""
+"""Coordinator for one EcoTimer: persistent connection, fast polling plus notifications."""
 
 from __future__ import annotations
 
@@ -12,12 +12,13 @@ from homeassistant.components import bluetooth
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
 from . import protocol as proto
-from .const import CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .const import CLOCK_CHECK_INTERVAL, CONF_POLL_SECONDS, DEFAULT_POLL_SECONDS, DOMAIN
 from .device import EcoTimerClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ type EcoTimerConfigEntry = ConfigEntry[EcoTimerCoordinator]
 
 
 class EcoTimerCoordinator(DataUpdateCoordinator[proto.EcoTimerState]):
-    """Polls the device; connections are short so the vendor app can still connect."""
+    """Keeps the connection open; the vendor app cannot connect while Home Assistant is connected."""
 
     config_entry: EcoTimerConfigEntry
 
@@ -38,10 +39,11 @@ class EcoTimerCoordinator(DataUpdateCoordinator[proto.EcoTimerState]):
             _LOGGER,
             config_entry=entry,
             name=entry.title,
-            update_interval=timedelta(minutes=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)),
+            update_interval=timedelta(seconds=entry.options.get(CONF_POLL_SECONDS, DEFAULT_POLL_SECONDS)),
         )
         self.address: str = entry.unique_id
-        self.client = EcoTimerClient(entry.title)
+        self.client = EcoTimerClient(entry.title, self._async_handle_notification)
+        self._last_clock_check = None
         self._store: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.{entry.entry_id}")
         # Last user-defined week program, restored by the "program" preset.
         self.program: proto.Program | None = None
@@ -58,7 +60,18 @@ class EcoTimerCoordinator(DataUpdateCoordinator[proto.EcoTimerState]):
         return round(self.data.actual + self.temperature_offset, 1)
 
     def _ble_device(self) -> BLEDevice | None:
-        return bluetooth.async_ble_device_from_address(self.hass, self.address, connectable=True)
+        """BLE device to connect to; not needed while connected (the device may stop advertising)."""
+        device = bluetooth.async_ble_device_from_address(self.hass, self.address, connectable=True)
+        if device is None and not self.client.connected:
+            raise HomeAssistantError(f"{self.address} is not in range of a connectable Bluetooth adapter or proxy")
+        return device
+
+    def _async_handle_notification(self, state: proto.EcoTimerState) -> None:
+        self.async_set_updated_data(state)
+
+    async def async_shutdown(self) -> None:
+        await super().async_shutdown()
+        await self.client.async_disconnect()
 
     @property
     def adapter_name(self) -> str | None:
@@ -75,12 +88,19 @@ class EcoTimerCoordinator(DataUpdateCoordinator[proto.EcoTimerState]):
         return info.rssi if info else None
 
     async def _async_update_data(self) -> proto.EcoTimerState:
-        if (ble_device := self._ble_device()) is None:
-            raise UpdateFailed(f"{self.address} is not in range of a connectable Bluetooth adapter or proxy")
+        now = dt_util.now()
+        sync_clock = self._last_clock_check is None or now - self._last_clock_check > CLOCK_CHECK_INTERVAL
         try:
-            state = await self.client.async_read(ble_device, dt_util.now().replace(tzinfo=None))
+            state = await self.client.async_read(
+                self._ble_device(), now.replace(tzinfo=None) if sync_clock else None
+            )
+        except HomeAssistantError as err:
+            raise UpdateFailed(str(err)) from err
         except BLE_ERRORS as err:
+            await self.client.async_disconnect()
             raise UpdateFailed(f"Reading {self.address} failed: {err}") from err
+        if sync_clock:
+            self._last_clock_check = now
         if self.program is None and state.uniform_mode() is None:
             await self.async_save_program(state.program)
         return state
@@ -97,11 +117,25 @@ class EcoTimerCoordinator(DataUpdateCoordinator[proto.EcoTimerState]):
         await self._async_save()
         self.async_update_listeners()
 
+    async def async_rename(self, name: str, device_name: str | None = None) -> None:
+        """Rename the Home Assistant device and entry; the thermostat gets device_name (max. 15 bytes)."""
+        ble_device = self._ble_device()
+        try:
+            written = await self.client.async_rename(ble_device, device_name or name)
+        except BLE_ERRORS as err:
+            await self.client.async_disconnect()
+            raise HomeAssistantError(f"Renaming {self.address} failed: {err}") from err
+        _LOGGER.debug("%s: device name is now %r", self.address, written)
+        self.hass.config_entries.async_update_entry(self.config_entry, title=name)
+        registry = dr.async_get(self.hass)
+        for device in dr.async_entries_for_config_entry(registry, self.config_entry.entry_id):
+            registry.async_update_device(device.id, name=name)
+
     async def async_write(self, **changes: Any) -> None:
-        if (ble_device := self._ble_device()) is None:
-            raise HomeAssistantError(f"{self.address} is not in range of a connectable Bluetooth adapter or proxy")
+        ble_device = self._ble_device()
         try:
             state = await self.client.async_write(ble_device, **changes)
         except BLE_ERRORS as err:
+            await self.client.async_disconnect()
             raise HomeAssistantError(f"Writing to {self.address} failed: {err}") from err
         self.async_set_updated_data(state)

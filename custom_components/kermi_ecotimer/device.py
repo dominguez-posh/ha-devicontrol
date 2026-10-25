@@ -1,9 +1,10 @@
-"""BLE access to a single EcoTimer. Connects per operation so the vendor app keeps working."""
+"""BLE access to a single EcoTimer over a persistent connection."""
 
 from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from datetime import datetime
 
 from bleak.backends.device import BLEDevice
@@ -16,15 +17,49 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class EcoTimerClient:
-    """Reads and writes the 188-byte state image."""
+    """Keeps one connection open, reads and writes the 188-byte state image."""
 
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, on_state: Callable[[proto.EcoTimerState], None]) -> None:
         self._name = name
+        self._on_state = on_state
         self._lock = asyncio.Lock()
+        self._client: BleakClientWithServiceCache | None = None
         self.software_version: str | None = None
 
-    async def _connect(self, ble_device: BLEDevice) -> BleakClientWithServiceCache:
-        return await establish_connection(BleakClientWithServiceCache, ble_device, self._name, max_attempts=3)
+    @property
+    def connected(self) -> bool:
+        return self._client is not None and self._client.is_connected
+
+    def _on_disconnect(self, _client: BleakClientWithServiceCache) -> None:
+        _LOGGER.debug("%s: disconnected", self._name)
+        self._client = None
+
+    def _on_notify(self, _sender: object, data: bytearray) -> None:
+        _LOGGER.debug("%s: notify %s", self._name, bytes(data).hex(" "))
+        try:
+            self._on_state(proto.parse(data))
+        except ValueError:
+            pass  # partial image (MTU-limited notification); the next poll reads the full image
+
+    async def _ensure_connected(self, ble_device: BLEDevice) -> BleakClientWithServiceCache:
+        if self.connected:
+            return self._client
+        client = await establish_connection(
+            BleakClientWithServiceCache, ble_device, self._name,
+            disconnected_callback=self._on_disconnect, max_attempts=3,
+        )
+        try:
+            if self.software_version is None:
+                self.software_version = (
+                    await client.read_gatt_char(proto.SOFTWARE_REVISION_CHAR)
+                ).decode(errors="replace")
+            await client.start_notify(proto.THERMO_CHAR, self._on_notify)
+        except Exception:
+            await client.disconnect()
+            raise
+        _LOGGER.debug("%s: connected", self._name)
+        self._client = client
+        return client
 
     async def _read_image(self, client: BleakClientWithServiceCache) -> bytes:
         raw = bytes(await client.read_gatt_char(proto.THERMO_CHAR))
@@ -41,33 +76,37 @@ class EcoTimerClient:
             _LOGGER.debug("%s: setting clock %s -> %s", self._name, clock, now)
             await client.write_gatt_char(proto.CURRENT_TIME_CHAR, proto.encode_time(now), response=True)
 
-    async def async_read(self, ble_device: BLEDevice, now: datetime) -> proto.EcoTimerState:
-        """Read the state and keep the device clock in sync with Home Assistant."""
+    async def async_read(self, ble_device: BLEDevice, now: datetime | None = None) -> proto.EcoTimerState:
+        """Read the state; with `now` the device clock is synchronised as well."""
         async with self._lock:
-            client = await self._connect(ble_device)
-            try:
-                if self.software_version is None:
-                    self.software_version = (
-                        await client.read_gatt_char(proto.SOFTWARE_REVISION_CHAR)
-                    ).decode(errors="replace")
+            client = await self._ensure_connected(ble_device)
+            if now is not None:
                 await self._sync_clock(client, now)
-                return proto.parse(await self._read_image(client))
-            finally:
-                await client.disconnect()
+            return proto.parse(await self._read_image(client))
 
     async def async_write(self, ble_device: BLEDevice, *, boost: bool | None = None,
                           eco_offset: float | None = None,
                           program: proto.Program | None = None) -> proto.EcoTimerState:
         """Read the current image, apply the changes, write it back and return the new state."""
         async with self._lock:
-            client = await self._connect(ble_device)
-            try:
-                state = proto.parse(await self._read_image(client))
-                image = proto.build_image(state, boost=boost, eco_offset=eco_offset, program=program)
-                for fragment in proto.fragments(image):
-                    _LOGGER.debug("%s: write %s", self._name, fragment.hex(" "))
-                    await client.write_gatt_char(proto.THERMO_CHAR, fragment, response=True)
-                await asyncio.sleep(0.5)
-                return proto.parse(await self._read_image(client))
-            finally:
+            client = await self._ensure_connected(ble_device)
+            state = proto.parse(await self._read_image(client))
+            image = proto.build_image(state, boost=boost, eco_offset=eco_offset, program=program)
+            for fragment in proto.fragments(image):
+                _LOGGER.debug("%s: write %s", self._name, fragment.hex(" "))
+                await client.write_gatt_char(proto.THERMO_CHAR, fragment, response=True)
+            await asyncio.sleep(0.5)
+            return proto.parse(await self._read_image(client))
+
+    async def async_rename(self, ble_device: BLEDevice, name: str) -> str:
+        """Write the GAP device name (as the app does) and return the name read back."""
+        async with self._lock:
+            client = await self._ensure_connected(ble_device)
+            await client.write_gatt_char(proto.DEVICE_NAME_CHAR, proto.device_name_bytes(name), response=True)
+            return (await client.read_gatt_char(proto.DEVICE_NAME_CHAR)).decode(errors="replace")
+
+    async def async_disconnect(self) -> None:
+        async with self._lock:
+            if self._client is not None:
+                client, self._client = self._client, None
                 await client.disconnect()

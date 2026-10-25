@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
+
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
+from .const import CONF_POLL_SECONDS, DEFAULT_POLL_SECONDS
 from .coordinator import EcoTimerConfigEntry, EcoTimerCoordinator
 
 PLATFORMS = [Platform.BINARY_SENSOR, Platform.CLIMATE, Platform.NUMBER, Platform.SENSOR, Platform.SWITCH]
@@ -24,4 +27,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: EcoTimerConfigEntry) ->
 
 
 async def _async_options_updated(hass: HomeAssistant, entry: EcoTimerConfigEntry) -> None:
-    await hass.config_entries.async_reload(entry.entry_id)
+    # also called for title changes (rename); only a new polling interval needs a reload
+    interval = timedelta(seconds=entry.options.get(CONF_POLL_SECONDS, DEFAULT_POLL_SECONDS))
+    if entry.runtime_data.update_interval != interval:
+        await hass.config_entries.async_reload(entry.entry_id)
