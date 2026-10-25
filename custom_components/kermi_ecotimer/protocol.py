@@ -174,6 +174,24 @@ def decode_time(data: bytes | bytearray) -> datetime:
     return datetime(year, month, day, hour, minute, second)
 
 
+# Dial positions measured on the device: step 1 = 14 %, step 3 = 57 %, step 5 = 100 %.
+DIAL_STEP_1_PERCENT = 14
+DIAL_PERCENT_PER_STEP = 21.5
+
+
+DIAL_SNOWFLAKE_PERCENT = 2  # at or below: snowflake
+
+
+def dial_timer_minutes(dial_percent: int) -> int:
+    """Boost duration for a dial position: snowflake 0 (boost ends), step n = n hours, max. 5 h."""
+    if dial_percent <= DIAL_SNOWFLAKE_PERCENT:
+        return 0
+    if dial_percent < DIAL_STEP_1_PERCENT:
+        return round(dial_percent / DIAL_STEP_1_PERCENT * 60)
+    hours = 1 + (dial_percent - DIAL_STEP_1_PERCENT) / DIAL_PERCENT_PER_STEP
+    return round(min(hours, 5.0) * 60)
+
+
 def device_name_bytes(name: str) -> bytes:
     """UTF-8 name cut to what the device accepts, without splitting a character."""
     return name.strip().encode()[:DEVICE_NAME_MAX_BYTES].decode(errors="ignore").rstrip().encode()

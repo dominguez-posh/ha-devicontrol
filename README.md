@@ -51,6 +51,7 @@ Assistant configuration and restart. Then continue with step 6 above.
 | Climate | *Heat/Off*, presets *Comfort*, *Eco*, *Week program*, *Boost*. Comfort temperature is set with the dial on the device; *Off* means antifreeze (7 °C). |
 | Switch *Boost* | Starts/stops a boost. |
 | Number *Boost duration* | 15–240 min. The device always runs a fixed 60 min boost (no other duration is accepted, tested on firmware 2.12); Home Assistant restarts it when it runs out early and stops it at the wanted end. Also applies to boosts started with the button. |
+| Option *Dial sets the boost duration when off* | While the mode is off, the dial is a boost timer: snowflake ends the boost, step 1 = 1 h … step 5 = 5 h, continuous in between (max. 5 h). Turning the dial during a boost changes the remaining time. |
 | Number *Eco offset* | 2–20 °C below comfort temperature (written to the device). |
 | Number *Temperature offset* | −5…+5 °C calibration of the measured temperature, stored in Home Assistant only. |
 | Sensors | Temperature, comfort temperature (dial), dial position, boost remaining, phase, Bluetooth adapter, RSSI (disabled). |

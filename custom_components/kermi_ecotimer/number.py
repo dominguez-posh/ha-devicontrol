@@ -91,7 +91,8 @@ class EcoTimerBoostDuration(EcoTimerEntity, NumberEntity):
 
     @property
     def native_value(self) -> int:
-        return self.coordinator.boost_duration
+        # in dial-timer mode this shows the duration taken from the dial
+        return self.coordinator.effective_boost_duration
 
     async def async_set_native_value(self, value: float) -> None:
         await self.coordinator.async_set_boost_duration(int(value))

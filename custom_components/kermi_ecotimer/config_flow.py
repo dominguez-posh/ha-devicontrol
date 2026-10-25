@@ -15,6 +15,7 @@ from homeassistant.core import callback
 
 from . import protocol as proto
 from .const import (
+    CONF_DIAL_TIMER,
     CONF_POLL_SECONDS,
     CONF_RATED_POWER,
     DEFAULT_POLL_SECONDS,
@@ -106,6 +107,7 @@ class EcoTimerOptionsFlow(OptionsFlow):
                     vol.Required(
                         CONF_RATED_POWER, default=options.get(CONF_RATED_POWER, DEFAULT_RATED_POWER)
                     ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_RATED_POWER)),
+                    vol.Required(CONF_DIAL_TIMER, default=options.get(CONF_DIAL_TIMER, False)): bool,
                 }
             ),
         )

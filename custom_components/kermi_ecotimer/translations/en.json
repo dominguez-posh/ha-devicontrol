@@ -23,11 +23,13 @@
       "init": {
         "data": {
           "poll_seconds": "Polling interval (seconds)",
-          "rated_power": "Rated power (W)"
+          "rated_power": "Rated power (W)",
+          "dial_timer": "Dial sets the boost duration when off"
         },
         "data_description": {
           "poll_seconds": "The connection stays open, so a poll is a single read. While Home Assistant is connected, the EcoTimer app cannot connect.",
-          "rated_power": "Power of the heating element while the relay is on (0 = no power/energy values). Measured: about 800 W."
+          "rated_power": "Power of the heating element while the relay is on (0 = no power/energy values). Measured: about 800 W.",
+          "dial_timer": "While the mode is off, the dial sets the boost duration continuously: snowflake ends the boost, step 1 = 1 h ... step 5 = 5 h. Turning the dial during a boost changes the remaining time."
         }
       }
     }

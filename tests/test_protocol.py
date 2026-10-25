@@ -108,6 +108,15 @@ def test_time_roundtrip():
     assert proto.decode_time(bytes.fromhex("e5 07 05 06 05 1f 11 04 00 00")) == datetime(2021, 5, 6, 5, 31, 17)
 
 
+@pytest.mark.parametrize(("dial", "minutes"), [(0, 0), (2, 0), (7, 30), (14, 60), (57, 180), (100, 300), (35, 119)])
+def test_dial_timer_minutes(dial, minutes):
+    assert proto.dial_timer_minutes(dial) == minutes
+
+
+def test_dial_timer_is_capped():
+    assert proto.dial_timer_minutes(255) == 300
+
+
 def test_device_name_is_cut_to_15_bytes():
     assert proto.device_name_bytes("Bad Klein") == b"Bad Klein"
     assert proto.device_name_bytes("Bad Klein Handtuch Trockner") == b"Bad Klein Handt"

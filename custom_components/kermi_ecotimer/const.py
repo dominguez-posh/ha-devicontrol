@@ -15,6 +15,10 @@ CONF_RATED_POWER = "rated_power"
 DEFAULT_RATED_POWER = 0  # W, 0 = unknown
 MAX_RATED_POWER = 5000
 
+# Option: while the mode is off (antifreeze program) the dial sets the boost duration,
+# continuously: snowflake ends the boost, step 1 = 1 h ... step 5 = 5 h.
+CONF_DIAL_TIMER = "dial_timer"
+
 # Boost duration wanted in Home Assistant (the device runs fixed 60 min boosts).
 DEFAULT_BOOST_MINUTES = 60
 MIN_BOOST_MINUTES = 15

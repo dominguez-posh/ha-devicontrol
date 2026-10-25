@@ -23,11 +23,13 @@
       "init": {
         "data": {
           "poll_seconds": "Abfrageintervall (Sekunden)",
-          "rated_power": "Nennleistung (W)"
+          "rated_power": "Nennleistung (W)",
+          "dial_timer": "Drehrad als Boost-Timer im Modus Aus"
         },
         "data_description": {
           "poll_seconds": "Die Verbindung bleibt bestehen, eine Abfrage ist nur ein Lesezugriff. Solange Home Assistant verbunden ist, kann sich die EcoTimer-App nicht verbinden.",
-          "rated_power": "Leistung des Heizstabs bei eingeschaltetem Relais (0 = keine Leistungs-/Energiewerte). Gemessen: ca. 800 W."
+          "rated_power": "Leistung des Heizstabs bei eingeschaltetem Relais (0 = keine Leistungs-/Energiewerte). Gemessen: ca. 800 W.",
+          "dial_timer": "Im Modus Aus bestimmt das Drehrad stufenlos die Boost-Dauer: Schneeflocke beendet den Boost, Stufe 1 = 1 h … Stufe 5 = 5 h. Drehen während eines Boosts ändert die Restzeit."
         }
       }
     }

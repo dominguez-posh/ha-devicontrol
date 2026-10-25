@@ -21,6 +21,7 @@ from homeassistant.util import dt as dt_util
 from . import protocol as proto
 from .const import (
     CLOCK_CHECK_INTERVAL,
+    CONF_DIAL_TIMER,
     CONF_POLL_SECONDS,
     CONF_RATED_POWER,
     DEFAULT_BOOST_MINUTES,
@@ -77,8 +78,25 @@ class EcoTimerCoordinator(DataUpdateCoordinator[proto.EcoTimerState]):
         return self.config_entry.options.get(CONF_RATED_POWER, DEFAULT_RATED_POWER)
 
     @property
+    def dial_timer_active(self) -> bool:
+        """Mode off with the dial-timer option: the dial sets the boost duration."""
+        return (
+            self.config_entry.options.get(CONF_DIAL_TIMER, False)
+            and self.data is not None
+            and self.data.uniform_mode() == proto.MODE_ANTIFREEZE
+        )
+
+    @property
+    def effective_boost_duration(self) -> int:
+        if self.dial_timer_active:
+            return proto.dial_timer_minutes(self.data.dial_percent)
+        return self.boost_duration
+
+    @property
     def boost_end(self) -> datetime | None:
-        return self.boost_start + timedelta(minutes=self.boost_duration) if self.boost_start else None
+        if self.boost_start is None:
+            return None
+        return self.boost_start + timedelta(minutes=self.effective_boost_duration)
 
     @property
     def boost_remaining(self) -> int:
@@ -143,6 +161,7 @@ class EcoTimerCoordinator(DataUpdateCoordinator[proto.EcoTimerState]):
 
     async def _async_manage_boost(self, state: proto.EcoTimerState) -> proto.EcoTimerState:
         """Stretch or shorten the device's fixed 60 min boost to the wanted duration."""
+        self.data = state
         now = dt_util.utcnow()
         if state.boost and self.boost_start is None:
             # started with the button on the device: count from its actual start
