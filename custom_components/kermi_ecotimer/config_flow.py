@@ -14,7 +14,16 @@ from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import callback
 
 from . import protocol as proto
-from .const import CONF_POLL_SECONDS, DEFAULT_POLL_SECONDS, DOMAIN, MAX_POLL_SECONDS, MIN_POLL_SECONDS
+from .const import (
+    CONF_POLL_SECONDS,
+    CONF_RATED_POWER,
+    DEFAULT_POLL_SECONDS,
+    DEFAULT_RATED_POWER,
+    DOMAIN,
+    MAX_POLL_SECONDS,
+    MAX_RATED_POWER,
+    MIN_POLL_SECONDS,
+)
 
 
 def _is_ecotimer(info: BluetoothServiceInfoBleak) -> bool:
@@ -86,14 +95,17 @@ class EcoTimerOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             return self.async_create_entry(data=user_input)
-        current = self.config_entry.options.get(CONF_POLL_SECONDS, DEFAULT_POLL_SECONDS)
+        options = self.config_entry.options
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_POLL_SECONDS, default=current): vol.All(
-                        vol.Coerce(int), vol.Range(min=MIN_POLL_SECONDS, max=MAX_POLL_SECONDS)
-                    )
+                    vol.Required(
+                        CONF_POLL_SECONDS, default=options.get(CONF_POLL_SECONDS, DEFAULT_POLL_SECONDS)
+                    ): vol.All(vol.Coerce(int), vol.Range(min=MIN_POLL_SECONDS, max=MAX_POLL_SECONDS)),
+                    vol.Required(
+                        CONF_RATED_POWER, default=options.get(CONF_RATED_POWER, DEFAULT_RATED_POWER)
+                    ): vol.All(vol.Coerce(int), vol.Range(min=0, max=MAX_RATED_POWER)),
                 }
             ),
         )

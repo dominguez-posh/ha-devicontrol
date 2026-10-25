@@ -22,10 +22,12 @@
     "step": {
       "init": {
         "data": {
-          "poll_seconds": "Polling interval (seconds)"
+          "poll_seconds": "Polling interval (seconds)",
+          "rated_power": "Rated power (W)"
         },
         "data_description": {
-          "poll_seconds": "The connection stays open, so a poll is a single read. While Home Assistant is connected, the EcoTimer app cannot connect."
+          "poll_seconds": "The connection stays open, so a poll is a single read. While Home Assistant is connected, the EcoTimer app cannot connect.",
+          "rated_power": "Power of the heating element while the relay is on (0 = no power/energy values). Measured: about 800 W."
         }
       }
     }

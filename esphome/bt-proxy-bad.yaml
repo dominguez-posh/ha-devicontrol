@@ -5,9 +5,9 @@ substitutions:
   friendly_name: BT-Proxy Bad
   # entity ids of the two thermostats in Home Assistant
   bath1_name: Bad Groß
-  bath1_climate: climate.bad_gross_handtuch_trockner
+  bath1_climate: climate.bad_gross_handtuchtrockner
   bath2_name: Bad Klein
-  bath2_climate: climate.bad_klein_handtuch_trockner
+  bath2_climate: climate.bad_klein_handtuchtrockner
 
 esphome:
   name: ${name}

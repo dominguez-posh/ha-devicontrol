@@ -34,6 +34,7 @@ EcoTimers in range are discovered automatically.
 | Number *Temperature offset* | −5…+5 °C calibration of the measured temperature, stored in Home Assistant only. |
 | Sensors | Temperature, comfort temperature (dial), dial position, boost remaining, phase, Bluetooth adapter, RSSI (disabled). |
 | Binary sensors | Heating (relay), window open, temperature limit. |
+| Power / Energy | Rated power (option, W) while the relay is on, and the accumulated energy in kWh for the energy dashboard. Measured on our devices: 800 W. |
 
 The device clock is checked hourly and set from Home Assistant when it drifts more than 2 min.
 
@@ -42,7 +43,7 @@ The device clock is checked hourly and set from Home Assistant when it drifts mo
 ```yaml
 action: kermi_ecotimer.rename
 target:
-  entity_id: climate.bad_klein_handtuch_trockner
+  entity_id: climate.bad_klein_handtuchtrockner
 data:
   name: Bad Klein Handtuchtrockner   # Home Assistant device name
   device_name: Bad Klein WKS         # Bluetooth name on the thermostat, max. 15 bytes

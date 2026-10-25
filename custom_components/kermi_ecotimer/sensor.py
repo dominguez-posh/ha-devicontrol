@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import (
+    RestoreSensor,
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
@@ -16,6 +18,8 @@ from homeassistant.const import (
     PERCENTAGE,
     SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     EntityCategory,
+    UnitOfEnergy,
+    UnitOfPower,
     UnitOfTemperature,
     UnitOfTime,
 )
@@ -64,6 +68,13 @@ SENSORS: tuple[EcoTimerSensorDescription, ...] = (
         value_fn=lambda c: c.data.actual,
     ),
     EcoTimerSensorDescription(
+        key="power",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        native_unit_of_measurement=UnitOfPower.WATT,
+        value_fn=lambda c: (c.rated_power if c.data.relay else 0) if c.rated_power else None,
+    ),
+    EcoTimerSensorDescription(
         key="comfort_temperature",
         translation_key="comfort_temperature",
         device_class=SensorDeviceClass.TEMPERATURE,
@@ -110,7 +121,8 @@ SENSORS: tuple[EcoTimerSensorDescription, ...] = (
 
 async def async_setup_entry(hass: HomeAssistant, entry: EcoTimerConfigEntry,
                             async_add_entities: AddConfigEntryEntitiesCallback) -> None:
-    async_add_entities(EcoTimerSensor(entry.runtime_data, description) for description in SENSORS)
+    coordinator = entry.runtime_data
+    async_add_entities([*(EcoTimerSensor(coordinator, d) for d in SENSORS), EcoTimerEnergySensor(coordinator)])
 
 
 class EcoTimerSensor(EcoTimerEntity, SensorEntity):
@@ -123,3 +135,46 @@ class EcoTimerSensor(EcoTimerEntity, SensorEntity):
     @property
     def native_value(self) -> Any:
         return self.entity_description.value_fn(self.coordinator)
+
+
+# Longer gaps between updates (connection lost) are not counted.
+MAX_ENERGY_GAP_SECONDS = 300
+
+
+class EcoTimerEnergySensor(EcoTimerEntity, RestoreSensor):
+    """Energy from relay-on time x rated power; survives restarts, usable in the energy dashboard."""
+
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_suggested_display_precision = 3
+
+    def __init__(self, coordinator: EcoTimerCoordinator) -> None:
+        super().__init__(coordinator, "energy")
+        self._energy = 0.0
+        self._last_update: datetime | None = None
+        self._relay_on = False
+
+    async def async_added_to_hass(self) -> None:
+        await super().async_added_to_hass()
+        if (last := await self.async_get_last_sensor_data()) and last.native_value is not None:
+            self._energy = float(last.native_value)
+        self._last_update = dt_util.utcnow()
+        self._relay_on = self.coordinator.data.relay
+
+    def _handle_coordinator_update(self) -> None:
+        now = dt_util.utcnow()
+        if not self.coordinator.last_update_success:
+            self._last_update = None
+        else:
+            if self._last_update is not None and self._relay_on:
+                seconds = (now - self._last_update).total_seconds()
+                if seconds <= MAX_ENERGY_GAP_SECONDS:
+                    self._energy += self.coordinator.rated_power * seconds / 3_600_000
+            self._last_update = now
+            self._relay_on = self.coordinator.data.relay
+        super()._handle_coordinator_update()
+
+    @property
+    def native_value(self) -> float | None:
+        return round(self._energy, 4) if self.coordinator.rated_power else None

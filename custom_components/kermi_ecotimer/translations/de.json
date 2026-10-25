@@ -22,10 +22,12 @@
     "step": {
       "init": {
         "data": {
-          "poll_seconds": "Abfrageintervall (Sekunden)"
+          "poll_seconds": "Abfrageintervall (Sekunden)",
+          "rated_power": "Nennleistung (W)"
         },
         "data_description": {
-          "poll_seconds": "Die Verbindung bleibt bestehen, eine Abfrage ist nur ein Lesezugriff. Solange Home Assistant verbunden ist, kann sich die EcoTimer-App nicht verbinden."
+          "poll_seconds": "Die Verbindung bleibt bestehen, eine Abfrage ist nur ein Lesezugriff. Solange Home Assistant verbunden ist, kann sich die EcoTimer-App nicht verbinden.",
+          "rated_power": "Leistung des Heizstabs bei eingeschaltetem Relais (0 = keine Leistungs-/Energiewerte). Gemessen: ca. 800 W."
         }
       }
     }

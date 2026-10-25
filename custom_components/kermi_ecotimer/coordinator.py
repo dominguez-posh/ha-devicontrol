@@ -18,7 +18,14 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from . import protocol as proto
-from .const import CLOCK_CHECK_INTERVAL, CONF_POLL_SECONDS, DEFAULT_POLL_SECONDS, DOMAIN
+from .const import (
+    CLOCK_CHECK_INTERVAL,
+    CONF_POLL_SECONDS,
+    CONF_RATED_POWER,
+    DEFAULT_POLL_SECONDS,
+    DEFAULT_RATED_POWER,
+    DOMAIN,
+)
 from .device import EcoTimerClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,6 +61,10 @@ class EcoTimerCoordinator(DataUpdateCoordinator[proto.EcoTimerState]):
         if data := await self._store.async_load():
             self.program = data.get("program")
             self.temperature_offset = data.get("temperature_offset", 0.0)
+
+    @property
+    def rated_power(self) -> int:
+        return self.config_entry.options.get(CONF_RATED_POWER, DEFAULT_RATED_POWER)
 
     @property
     def current_temperature(self) -> float:
