@@ -48,3 +48,14 @@ rename:
       example: Bad Klein
       selector:
         text:
+write_raw:
+  target:
+    entity:
+      integration: kermi_ecotimer
+      domain: climate
+  fields:
+    patches:
+      required: true
+      example: "{1: 12, 4: 65}"
+      selector:
+        object:

@@ -136,6 +136,16 @@
           "description": "Bluetooth-Name auf dem Thermostat (max. 15 Bytes). Standard: der Name oben, gekürzt."
         }
       }
+    },
+    "write_raw": {
+      "name": "Rohdaten schreiben (Diagnose)",
+      "description": "Schreibt das Zustandsabbild mit einzelnen ersetzten Header-Bytes (0-19). Nur für Analysezwecke.",
+      "fields": {
+        "patches": {
+          "name": "Änderungen",
+          "description": "Zuordnung Offset -> Bytewert."
+        }
+      }
     }
   }
 }

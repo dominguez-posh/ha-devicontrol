@@ -20,9 +20,29 @@ thermostat uses one connection slot of the proxy (ESPHome default: 3).
 
 ## Installation
 
+### HACS (recommended)
+
+1. Open **HACS** in Home Assistant.
+2. Menu **⋮ → Custom repositories**.
+3. Repository: `https://github.com/dominguez-posh/ha-devicontrol`, type **Integration** → **Add**.
+4. Search for **Kermi EcoTimer** in HACS → **Download**.
+5. Restart Home Assistant (**Settings → System → Restart**).
+6. EcoTimers in range of a connectable adapter or proxy show up under **Settings → Devices &
+   services → Discovered** → **Add**. Alternatively **Add integration → Kermi EcoTimer** lists
+   all EcoTimers Home Assistant currently sees.
+7. Optional: **⚙ (options)** of each entry to set the rated power (W) and the polling interval.
+
+Updates are offered by HACS like for any other integration.
+
+### Manual
+
 Copy `custom_components/kermi_ecotimer` into the `custom_components` folder of your Home
-Assistant configuration (or add this repository to HACS as a custom repository) and restart.
-EcoTimers in range are discovered automatically.
+Assistant configuration and restart. Then continue with step 6 above.
+
+### Blueprint
+
+**Settings → Automations & scenes → Blueprints → Import blueprint** with
+`https://github.com/dominguez-posh/ha-devicontrol/blob/main/blueprints/automation/kermi_ecotimer/heating_too_long.yaml`.
 
 ## Entities
 

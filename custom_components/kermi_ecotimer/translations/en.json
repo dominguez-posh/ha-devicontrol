@@ -136,6 +136,16 @@
           "description": "Bluetooth name stored on the thermostat (max. 15 bytes). Default: the name above, shortened."
         }
       }
+    },
+    "write_raw": {
+      "name": "Write raw bytes (diagnostics)",
+      "description": "Writes the state image with single header bytes (0-19) replaced. For reverse engineering only.",
+      "fields": {
+        "patches": {
+          "name": "Patches",
+          "description": "Mapping offset -> byte value."
+        }
+      }
     }
   }
 }

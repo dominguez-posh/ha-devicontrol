@@ -86,12 +86,18 @@ class EcoTimerClient:
 
     async def async_write(self, ble_device: BLEDevice, *, boost: bool | None = None,
                           eco_offset: float | None = None,
-                          program: proto.Program | None = None) -> proto.EcoTimerState:
+                          program: proto.Program | None = None,
+                          raw_patches: dict[int, int] | None = None) -> proto.EcoTimerState:
         """Read the current image, apply the changes, write it back and return the new state."""
         async with self._lock:
             client = await self._ensure_connected(ble_device)
             state = proto.parse(await self._read_image(client))
             image = proto.build_image(state, boost=boost, eco_offset=eco_offset, program=program)
+            if raw_patches:  # diagnostics: header bytes only
+                image = bytearray(image)
+                for offset, value in raw_patches.items():
+                    image[offset] = value
+                image = bytes(image)
             for fragment in proto.fragments(image):
                 _LOGGER.debug("%s: write %s", self._name, fragment.hex(" "))
                 await client.write_gatt_char(proto.THERMO_CHAR, fragment, response=True)

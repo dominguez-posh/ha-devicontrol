@@ -55,6 +55,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: EcoTimerConfigEntry,
     platform = entity_platform.async_get_current_platform()
     platform.async_register_entity_service("set_program", SET_PROGRAM_SCHEMA, "async_set_program")
     platform.async_register_entity_service(
+        "write_raw",
+        {vol.Required("patches"): {vol.All(vol.Coerce(int), vol.Range(min=0, max=proto.SCHEDULE_OFFSET - 1)):
+                                   vol.All(vol.Coerce(int), vol.Range(min=0, max=255))}},
+        "async_write_raw",
+    )
+    platform.async_register_entity_service(
         "rename",
         {
             vol.Required("name"): vol.All(cv.string, vol.Length(min=1, max=64)),
@@ -160,6 +166,10 @@ class EcoTimerClimate(EcoTimerEntity, ClimateEntity):
             program = proto.uniform_program(mode)
         self._last_preset = preset_mode
         await self.coordinator.async_write(boost=False, program=program)
+
+    async def async_write_raw(self, patches: dict[int, int]) -> None:
+        """Diagnostics: write the image with single header bytes replaced."""
+        await self.coordinator.async_write(raw_patches=patches)
 
     async def async_rename(self, name: str, device_name: str | None = None) -> None:
         """Rename the thermostat (Bluetooth name, Home Assistant device and entry)."""
