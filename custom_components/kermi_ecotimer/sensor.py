@@ -93,7 +93,7 @@ SENSORS: tuple[EcoTimerSensorDescription, ...] = (
         translation_key="boost_remaining",
         device_class=SensorDeviceClass.DURATION,
         native_unit_of_measurement=UnitOfTime.MINUTES,
-        value_fn=lambda c: c.data.boost_remaining if c.data.boost else 0,
+        value_fn=lambda c: c.boost_remaining,
     ),
     EcoTimerSensorDescription(
         key="phase",

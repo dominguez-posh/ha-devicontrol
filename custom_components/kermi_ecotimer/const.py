@@ -15,6 +15,11 @@ CONF_RATED_POWER = "rated_power"
 DEFAULT_RATED_POWER = 0  # W, 0 = unknown
 MAX_RATED_POWER = 5000
 
+# Boost duration wanted in Home Assistant (the device runs fixed 60 min boosts).
+DEFAULT_BOOST_MINUTES = 60
+MIN_BOOST_MINUTES = 15
+MAX_BOOST_MINUTES = 240
+
 # Clock drift after which the device clock is set again, and how often it is checked.
 CLOCK_TOLERANCE_SECONDS = 120
 CLOCK_CHECK_INTERVAL = timedelta(hours=1)

@@ -132,7 +132,8 @@ class EcoTimerClimate(EcoTimerEntity, ClimateEntity):
         return {
             "comfort_temperature": state.setpoint,
             "eco_temperature": state.eco_temperature,
-            "boost_remaining": state.boost_remaining if state.boost else 0,
+            "boost_remaining": self.coordinator.boost_remaining,
+            "boost_duration": self.coordinator.boost_duration,
             "program": {
                 DAYS[i]: ", ".join(f"{a}-{b} {m}" for a, b, m in proto.day_summary(day))
                 for i, day in enumerate(state.program)
