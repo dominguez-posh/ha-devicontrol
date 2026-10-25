@@ -1,0 +1,125 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "Choose the EcoTimer to add. Only devices that are in range of a connectable Bluetooth adapter or proxy are listed.",
+        "data": {
+          "address": "Device"
+        }
+      },
+      "bluetooth_confirm": {
+        "description": "Add {name} ({address})?"
+      }
+    },
+    "abort": {
+      "already_configured": "This device is already configured.",
+      "no_devices_found": "No EcoTimer found. Make sure a connectable Bluetooth adapter or ESPHome Bluetooth proxy is in range.",
+      "not_supported": "This device is not a Kermi EcoTimer."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Polling interval (minutes)"
+        },
+        "data_description": {
+          "scan_interval": "Each poll connects briefly. While connected, the EcoTimer app cannot connect."
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "ecotimer": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "comfort": "Comfort",
+              "eco": "Eco",
+              "program": "Week program",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "heating": {
+        "name": "Heating"
+      },
+      "temperature_limit": {
+        "name": "Temperature limit"
+      }
+    },
+    "number": {
+      "eco_offset": {
+        "name": "Eco offset"
+      },
+      "temperature_offset": {
+        "name": "Temperature offset"
+      }
+    },
+    "sensor": {
+      "comfort_temperature": {
+        "name": "Comfort temperature (dial)"
+      },
+      "dial_position": {
+        "name": "Dial position"
+      },
+      "boost_remaining": {
+        "name": "Boost remaining"
+      },
+      "phase": {
+        "name": "Phase",
+        "state": {
+          "antifreeze": "Antifreeze",
+          "eco": "Eco",
+          "comfort": "Comfort",
+          "boost": "Boost"
+        }
+      },
+      "adapter": {
+        "name": "Bluetooth adapter"
+      },
+      "raw_temperature": {
+        "name": "Temperature (uncalibrated)"
+      }
+    },
+    "switch": {
+      "boost": {
+        "name": "Boost"
+      }
+    }
+  },
+  "exceptions": {
+    "no_program": {
+      "message": "No week program defined yet. Use the kermi_ecotimer.set_program action first."
+    }
+  },
+  "services": {
+    "set_program": {
+      "name": "Set week program",
+      "description": "Defines the week program for the selected days in quarter-hour steps.",
+      "fields": {
+        "days": {
+          "name": "Days",
+          "description": "Days to change."
+        },
+        "base_mode": {
+          "name": "Base mode",
+          "description": "Mode outside of the periods."
+        },
+        "periods": {
+          "name": "Periods",
+          "description": "List of periods, e.g. [{start: '06:00', end: '08:30', mode: comfort}]. End may be 24:00."
+        },
+        "activate": {
+          "name": "Activate",
+          "description": "Write the program to the device and switch to the week program preset."
+        }
+      }
+    }
+  }
+}

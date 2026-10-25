@@ -1,0 +1,125 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "description": "Wähle den EcoTimer aus. Angezeigt werden nur Geräte in Reichweite eines verbindungsfähigen Bluetooth-Adapters oder Proxys.",
+        "data": {
+          "address": "Gerät"
+        }
+      },
+      "bluetooth_confirm": {
+        "description": "{name} ({address}) hinzufügen?"
+      }
+    },
+    "abort": {
+      "already_configured": "Dieses Gerät ist bereits eingerichtet.",
+      "no_devices_found": "Kein EcoTimer gefunden. Ein verbindungsfähiger Bluetooth-Adapter oder ESPHome-Bluetooth-Proxy muss in Reichweite sein.",
+      "not_supported": "Dieses Gerät ist kein Kermi EcoTimer."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Abfrageintervall (Minuten)"
+        },
+        "data_description": {
+          "scan_interval": "Jede Abfrage verbindet sich kurz. Währenddessen kann sich die EcoTimer-App nicht verbinden."
+        }
+      }
+    }
+  },
+  "entity": {
+    "climate": {
+      "ecotimer": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "comfort": "Komfort",
+              "eco": "Eco",
+              "program": "Wochenprogramm",
+              "boost": "Boost"
+            }
+          }
+        }
+      }
+    },
+    "binary_sensor": {
+      "heating": {
+        "name": "Heizt"
+      },
+      "temperature_limit": {
+        "name": "Temperaturbegrenzung"
+      }
+    },
+    "number": {
+      "eco_offset": {
+        "name": "Eco-Absenkung"
+      },
+      "temperature_offset": {
+        "name": "Temperatur-Offset"
+      }
+    },
+    "sensor": {
+      "comfort_temperature": {
+        "name": "Komforttemperatur (Drehrad)"
+      },
+      "dial_position": {
+        "name": "Drehradstellung"
+      },
+      "boost_remaining": {
+        "name": "Boost-Restzeit"
+      },
+      "phase": {
+        "name": "Phase",
+        "state": {
+          "antifreeze": "Frostschutz",
+          "eco": "Eco",
+          "comfort": "Komfort",
+          "boost": "Boost"
+        }
+      },
+      "adapter": {
+        "name": "Bluetooth-Adapter"
+      },
+      "raw_temperature": {
+        "name": "Temperatur (unkalibriert)"
+      }
+    },
+    "switch": {
+      "boost": {
+        "name": "Boost"
+      }
+    }
+  },
+  "exceptions": {
+    "no_program": {
+      "message": "Noch kein Wochenprogramm festgelegt. Zuerst die Aktion kermi_ecotimer.set_program verwenden."
+    }
+  },
+  "services": {
+    "set_program": {
+      "name": "Wochenprogramm setzen",
+      "description": "Legt das Wochenprogramm für die gewählten Tage im Viertelstundenraster fest.",
+      "fields": {
+        "days": {
+          "name": "Tage",
+          "description": "Zu ändernde Tage."
+        },
+        "base_mode": {
+          "name": "Grundmodus",
+          "description": "Modus außerhalb der Zeiträume."
+        },
+        "periods": {
+          "name": "Zeiträume",
+          "description": "Liste von Zeiträumen, z. B. [{start: '06:00', end: '08:30', mode: comfort}]. Ende darf 24:00 sein."
+        },
+        "activate": {
+          "name": "Aktivieren",
+          "description": "Programm aufs Gerät schreiben und auf Preset Wochenprogramm wechseln."
+        }
+      }
+    }
+  }
+}

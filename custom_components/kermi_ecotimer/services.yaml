@@ -1,0 +1,35 @@
+set_program:
+  target:
+    entity:
+      integration: kermi_ecotimer
+      domain: climate
+  fields:
+    days:
+      required: true
+      selector:
+        select:
+          multiple: true
+          options:
+            - mon
+            - tue
+            - wed
+            - thu
+            - fri
+            - sat
+            - sun
+    base_mode:
+      default: eco
+      selector:
+        select:
+          options:
+            - antifreeze
+            - eco
+            - comfort
+    periods:
+      example: "[{start: '06:00', end: '08:30', mode: comfort}, {start: '18:00', end: '22:00', mode: comfort}]"
+      selector:
+        object:
+    activate:
+      default: true
+      selector:
+        boolean:

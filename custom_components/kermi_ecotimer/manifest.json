@@ -1,0 +1,20 @@
+{
+  "domain": "kermi_ecotimer",
+  "name": "Kermi EcoTimer",
+  "bluetooth": [
+    {
+      "manufacturer_id": 1414,
+      "manufacturer_data_start": [115, 116, 97],
+      "connectable": true
+    }
+  ],
+  "codeowners": ["@dominguez-posh"],
+  "config_flow": true,
+  "dependencies": ["bluetooth_adapters"],
+  "documentation": "https://github.com/dominguez-posh/ha-devicontrol",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/dominguez-posh/ha-devicontrol/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

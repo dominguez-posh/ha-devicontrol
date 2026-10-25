@@ -1,0 +1,112 @@
+# Bluetooth proxy (active connections) for the Kermi EcoTimer thermostats,
+# with an I2C OLED showing their state from Home Assistant.
+substitutions:
+  name: bt-proxy-bad
+  friendly_name: BT-Proxy Bad
+  # entity ids of the two thermostats (set after they are added in Home Assistant)
+  bath1_name: Bad 1
+  bath1_climate: climate.thermostat_wks
+  bath2_name: Bad 2
+  bath2_climate: climate.thermostat_wks_2
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: ${name}
+
+captive_portal:
+
+improv_serial:
+
+esp32_ble_tracker:
+  scan_parameters:
+    active: true
+
+bluetooth_proxy:
+  active: true
+
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 11
+  - file: "gfonts://Roboto@500"
+    id: font_big
+    size: 18
+
+sensor:
+  - platform: homeassistant
+    id: bath1_temp
+    entity_id: ${bath1_climate}
+    attribute: current_temperature
+  - platform: homeassistant
+    id: bath2_temp
+    entity_id: ${bath2_climate}
+    attribute: current_temperature
+  - platform: wifi_signal
+    name: WLAN-Signal
+    update_interval: 60s
+
+text_sensor:
+  - platform: homeassistant
+    id: bath1_action
+    entity_id: ${bath1_climate}
+    attribute: hvac_action
+  - platform: homeassistant
+    id: bath2_action
+    entity_id: ${bath2_climate}
+    attribute: hvac_action
+  - platform: homeassistant
+    id: bath1_preset
+    entity_id: ${bath1_climate}
+    attribute: preset_mode
+  - platform: homeassistant
+    id: bath2_preset
+    entity_id: ${bath2_climate}
+    attribute: preset_mode
+
+display:
+  - platform: ssd1306_i2c
+    model: "SH1106 128x64"
+    address: 0x3C
+    update_interval: 5s
+    lambda: |-
+      auto line = [&](int y, const char *name, esphome::homeassistant::HomeassistantSensor *t,
+                      esphome::homeassistant::HomeassistantTextSensor *action,
+                      esphome::homeassistant::HomeassistantTextSensor *preset) {
+        it.print(0, y, id(font_small), name);
+        if (t->has_state() && !isnan(t->state)) {
+          it.printf(127, y - 2, id(font_big), TextAlign::TOP_RIGHT, "%.1f°", t->state);
+        } else {
+          it.print(127, y, id(font_small), TextAlign::TOP_RIGHT, "--");
+        }
+        std::string info = preset->has_state() ? preset->state : "";
+        if (action->has_state() && action->state == "heating") info += " | heizt";
+        it.print(0, y + 13, id(font_small), info.c_str());
+      };
+      line(0, "${bath1_name}", id(bath1_temp), id(bath1_action), id(bath1_preset));
+      line(34, "${bath2_name}", id(bath2_temp), id(bath2_action), id(bath2_preset));

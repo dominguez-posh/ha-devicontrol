@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+devi_dump_*.json
+devi_adv_*.json
+ecotimer_backup_*.bin
+esphome/secrets.yaml
+esphome/.esphome/
+.venv-esphome/
+*.xapk
+*.apk
